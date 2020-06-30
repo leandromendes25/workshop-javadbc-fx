@@ -44,6 +44,7 @@ public class MainViewerController implements Initializable {
 		// como o about não leva a nada
 		loadView("/gui/About.fxml", x -> {
 		});
+
 	};
 
 	@Override

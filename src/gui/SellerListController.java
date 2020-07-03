@@ -2,6 +2,7 @@ package gui;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -30,38 +31,49 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.entities.Department;
+import model.entities.Seller;
 import model.services.DepartmentService;
+import model.services.SellerService;
 
-public class DepartmentListController implements Initializable, DataChangeListener {
+public class SellerListController implements Initializable, DataChangeListener {
 
-	private DepartmentService service;
+	private SellerService service;
 	// Instanciando a tableView
 	@FXML
-	private TableView<Department> tableViewDepartment;
+	private TableView<Seller> tableViewSeller;
 	@FXML
 	// O tipo da entidade e depois o tipo da coluna
-	private TableColumn<Department, Integer> tableColumnId;
+	private TableColumn<Seller, Integer> tableColumnId;
 	@FXML
-	private TableColumn<Department, String> tableColumnName;
+	private TableColumn<Seller, String> tableColumnName;
 
 	@FXML
-	private TableColumn<Department, Department> tableColumnEDIT;
+	private TableColumn<Department, String> tableColumnEmail;
 
 	@FXML
-	private TableColumn<Department, Department> tableColumnRemove;
+	private TableColumn<Department, Date> tableColumnBirthDate;
+
+	@FXML
+	private TableColumn<Department, Double> tableColumnBaseSalary;
+
+	@FXML
+	private TableColumn<Seller, Seller> tableColumnEDIT;
+
+	@FXML
+	private TableColumn<Seller, Seller> tableColumnRemove;
 
 	@FXML
 	private Button btNew;
 
-	private ObservableList<Department> obsList;
+	private ObservableList<Seller> obsList;
 
 	@FXML // referencia ao controle que recebeu o evento
 	public void onBtNewAction(ActionEvent event) {
 		Stage parentStage = Utils.currentStage(event);
 		// Quando for criar um departmento ele vai estar vazio então
 		// e colocamos o obj ali para injetá-lo no formulario
-		Department obj = new Department();
-		createDialogForm(obj, "/gui/DepartmentForm.fxml", parentStage);
+		Seller obj = new Seller();
+		createDialogForm(obj, "/gui/SellerForm.fxml", parentStage);
 	}
 
 	@Override
@@ -69,48 +81,55 @@ public class DepartmentListController implements Initializable, DataChangeListen
 		initializeNodes();
 	}
 
-	public void setDepartmentService(DepartmentService service) {
+	public void setSellerService(SellerService service) {
 		this.service = service;
 	}
 
 	public void initializeNodes() {
 		// para iniciar os comportamento das colunas
+		// os ao lado tem q ser igual ao que está na tabela Seller
 		tableColumnId.setCellValueFactory(new PropertyValueFactory<>("id"));
 		tableColumnName.setCellValueFactory(new PropertyValueFactory<>("name"));
+		tableColumnEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
+		tableColumnBirthDate.setCellValueFactory(new PropertyValueFactory<>("birthDate"));
+		Utils.formatTableColumnDate(tableColumnBirthDate, "dd/MM/yyyy");
+		tableColumnBaseSalary.setCellValueFactory(new PropertyValueFactory<>("baseSalary"));
+		Utils.formatTableColumnDouble(tableColumnBaseSalary, 2);
 		// window pega referencia do stage, é uma super classe
 		Stage stage = (Stage) Main.getMainScene().getWindow();
 		// tableView Acompanhar o tamanho da janela
-		tableViewDepartment.prefHeightProperty().bind(stage.heightProperty());
+		tableViewSeller.prefHeightProperty().bind(stage.heightProperty());
 	}
 
 	public void updateTableView() {
 		if (service == null) {
 			throw new IllegalStateException("service is null");
 		}
-		List<Department> list = service.findAll();
+		List<Seller> list = service.findAll();
 		obsList = FXCollections.observableArrayList(list);
 		// setItems para carregar na view
-		tableViewDepartment.setItems(obsList);
+		tableViewSeller.setItems(obsList);
 		initEditButtons();
 		initRemoveButtons();
 	}
 
-	// ao criar uma janela de dialogo temos q dizer quem é o stage q vai cria o
+// ao criar uma janela de dialogo temos q dizer quem é o stage q vai cria o
 	// dialogo
-	private void createDialogForm(Department obj, String absoluteName, Stage parentStage) {
+	private void createDialogForm(Seller obj, String absoluteName, Stage parentStage) {
 		try {
 			FXMLLoader loader = new FXMLLoader(getClass().getResource(absoluteName));
 			Pane pane = loader.load();
 			Stage dialogStage = new Stage();
-			DepartmentFormControl controller = loader.getController();
-			controller.setDeparment(obj);
-			controller.setDeparmentService(new DepartmentService());
+			SellerFormControl controller = loader.getController();
+			controller.setSeller(obj);
+			controller.setService(new SellerService(), new DepartmentService());
+			controller.loadAssociatedObject();
 			// me inscrevendo para receber o evento, e o onDataChange será executado
 			controller.subscribeDataChangeListener(this);
 			// para carregar o obj num formulario
 			controller.updateFormData();
 			// quando o dialogo tem q aparecer na frente, tem q instanciar um novo stage
-			dialogStage.setTitle("Enter Department Data");
+			dialogStage.setTitle("Enter Seller Data");
 			// elemento raiz da cena, pane
 			dialogStage.setScene(new Scene(pane));
 			// redimensiona janela
@@ -135,30 +154,29 @@ public class DepartmentListController implements Initializable, DataChangeListen
 	// Acrescenta um novo botão edit para cada linha da tabela
 	private void initEditButtons() {
 		tableColumnEDIT.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue()));
-		tableColumnEDIT.setCellFactory(param -> new TableCell<Department, Department>() {
+		tableColumnEDIT.setCellFactory(param -> new TableCell<Seller, Seller>() {
 			private final Button button = new Button("edit");
 
 			@Override
-			protected void updateItem(Department obj, boolean empty) {
+			protected void updateItem(Seller obj, boolean empty) {
 				super.updateItem(obj, empty);
 				if (obj == null) {
 					setGraphic(null);
 					return;
 				}
 				setGraphic(button);
-				button.setOnAction(
-						event -> createDialogForm(obj, "/gui/DepartmentForm.fxml", Utils.currentStage(event)));
+				button.setOnAction(event -> createDialogForm(obj, "/gui/SellerForm.fxml", Utils.currentStage(event)));
 			}
 		});
 	}
 
 	private void initRemoveButtons() {
 		tableColumnRemove.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue()));
-		tableColumnRemove.setCellFactory(param -> new TableCell<Department, Department>() {
+		tableColumnRemove.setCellFactory(param -> new TableCell<Seller, Seller>() {
 			private final Button button = new Button("remove");
 
 			@Override
-			protected void updateItem(Department obj, boolean empty) {
+			protected void updateItem(Seller obj, boolean empty) {
 				super.updateItem(obj, empty);
 				if (obj == null) {
 					setGraphic(null);
@@ -171,7 +189,7 @@ public class DepartmentListController implements Initializable, DataChangeListen
 
 	}
 
-	private void removeEntity(Department obj) {
+	private void removeEntity(Seller obj) {
 		// colocamos get ali pq o optional carrega um outro objeto dentro dele
 		Optional<ButtonType> result = Alerts.showConfirmation("Confirmation", "Are you sure to delete?");
 		if (result.get() == ButtonType.OK) {
